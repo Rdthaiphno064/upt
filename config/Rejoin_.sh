@@ -13,7 +13,7 @@ force_restart() {
         if [ -z "$MAIN_ACTIVITY" ]; then
             continue
         fi
-        su -c "am start --user 0 -n '$MAIN_ACTIVITY' -a android.intent.action.VIEW -d 'roblox://experiences/start?placeId=${GAME_ID}'"
+        su -c "am start --user 0 -n '$MAIN_ACTIVITY' -a android.intent.action.VIEW -d 'roblox://placeID=${GAME_ID}'"
         sleep 3
     done
     LAST_RESTART_TIME=$(date +%s)
