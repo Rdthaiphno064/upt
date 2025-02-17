@@ -9,16 +9,21 @@ else
     DEVICE_NAME=$(hostname)
     INTERVAL=5
 fi
-declare -A LAST_RESTART_TIMES
+ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
+for pkg in $ROBLOX_PACKAGES; do
+    eval "LAST_RESTART_TIMES_$pkg=0"
+done
 send_webhook() {
     [[ "$WEBHOOK_URL" =~ ^https://discord\.com/api/webhooks/ ]] || return
     while true; do
-        local SCREENSHOT="/tmp/screenshot.png"
+        SCREENSHOT="/tmp/screenshot.png"
         screencap -p "$SCREENSHOT" 2>/dev/null || import -window root "$SCREENSHOT" 2>/dev/null
-        read CPU MEM_TOTAL MEM_USED MEM_FREE UPTIME < <(
-            echo "$(top -bn1 | awk '/Cpu/ {print 100-$8}') $(free -m | awk '/Mem:/ {print $2, $3, $7}') $(awk '{print $1/3600}' /proc/uptime)"
-        )
-        local PAYLOAD=$(jq -n \
+        CPU=$(top -bn1 | awk '/Cpu/ {print 100-$8}')
+        MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
+        MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
+        MEM_FREE=$(free -m | awk '/Mem:/ {print $7}')
+        UPTIME=$(awk '{print $1/3600}' /proc/uptime)
+        PAYLOAD=$(jq -n \
             --arg title "Thông tin hệ thống của $DEVICE_NAME" \
             --arg device_name "$DEVICE_NAME" \
             --arg cpu_usage "$CPU%" \
@@ -47,7 +52,6 @@ send_webhook() {
     done
 }
 force_restart() {
-    ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
     for pkg in $ROBLOX_PACKAGES; do
         echo "Đóng Roblox Cho $pkg..."
         su -c "am force-stop $pkg" >/dev/null 2>&1
@@ -59,12 +63,11 @@ force_restart() {
         sleep 10
         echo "Vào GameID $GAME_ID Cho $pkg..."
         am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-        LAST_RESTART_TIMES[$pkg]=$(date +%s)
+        eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
     done
     sleep 10
 }
 is_foreground() {
-    ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
     for pkg in $ROBLOX_PACKAGES; do
         if ! su -c "pidof $pkg" >/dev/null; then
             echo "Mở Roblox Cho $pkg..."
@@ -72,16 +75,15 @@ is_foreground() {
             sleep 10
             echo "Vào GameID $GAME_ID Cho $pkg..."
             am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-            LAST_RESTART_TIMES[$pkg]=$(date +%s)
+            eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
         fi
     done
 }
 auto_restart() {
     while true; do
         CURRENT_TIME=$(date +%s)
-        ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
         for pkg in $ROBLOX_PACKAGES; do
-            LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
+            eval "LAST_RESTART_TIME=\${LAST_RESTART_TIMES_$pkg:-0}"
             if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
                 echo "Đóng Roblox Cho $pkg..."
                 su -c "am force-stop $pkg" >/dev/null 2>&1
@@ -91,7 +93,7 @@ auto_restart() {
                 sleep 10
                 echo "Vào GameID $GAME_ID Cho $pkg..."
                 am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-                LAST_RESTART_TIMES[$pkg]=$(date +%s)
+                eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
             fi
         done
         is_foreground
@@ -106,8 +108,7 @@ sleep 30
 if ! command -v sqlite3 &> /dev/null; then
     pkg install -y sqlite > /dev/null 2>&1
 fi
-PACKAGES=$(pm list packages | grep "roblox" | cut -d':' -f2)
-for PACKAGE in $PACKAGES; do
+for PACKAGE in $ROBLOX_PACKAGES; do
     COOKIE_FILES=()
     COOKIE_PATHS=$(su -c "find /data/data/$PACKAGE -type f -name 'Cookies' 2>/dev/null")
     for COOKIE_PATH in $COOKIE_PATHS; do
