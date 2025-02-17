@@ -5,7 +5,7 @@ declare -A LAST_RESTART_TIMES
 force_restart() {
     ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
     for pkg in $ROBLOX_PACKAGES; do
-        am force-stop $pkg
+        su -c "am force-stop $pkg"
     done
     sleep 3
     for pkg in $ROBLOX_PACKAGES; do
@@ -34,7 +34,7 @@ auto_restart() {
         for pkg in $ROBLOX_PACKAGES; do
             LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
             if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_RJ ]; then
-                am force-stop $pkg
+                su -c "am force-stop $pkg"
                 sleep 3
                 am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}"
                 sleep 10
