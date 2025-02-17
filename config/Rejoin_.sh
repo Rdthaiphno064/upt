@@ -14,7 +14,9 @@ for pkg in $ROBLOX_PACKAGES; do
     eval "LAST_RESTART_TIMES_$pkg=0"
 done
 send_webhook() {
-    [[ "$WEBHOOK_URL" =~ ^https://discord\.com/api/webhooks/ ]] || return
+    echo "$WEBHOOK_URL" | grep -qE "^https://discord\.com/api/webhooks/" || {
+        return 1
+    }
     while true; do
         SCREENSHOT="/tmp/screenshot.png"
         screencap -p "$SCREENSHOT" 2>/dev/null || import -window root "$SCREENSHOT" 2>/dev/null
