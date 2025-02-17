@@ -57,15 +57,15 @@ send_webhook() {
 }
 force_restart() {
     for pkg in $ROBLOX_PACKAGES; do
-        echo "Đóng Roblox Cho $pkg..."
+        echo "Đóng Roblox Cho $pkg"
         su -c "am force-stop $pkg" >/dev/null 2>&1
     done
     sleep 3
     for pkg in $ROBLOX_PACKAGES; do
-        echo "Mở Roblox Cho $pkg..."
+        echo "Mở Roblox Cho $pkg"
         am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-        sleep 10
-        echo "Vào GameID $GAME_ID Cho $pkg..."
+        sleep 15
+        echo "Vào GameID $GAME_ID Cho $pkg"
         am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
         eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
     done
@@ -74,10 +74,10 @@ force_restart() {
 is_foreground() {
     for pkg in $ROBLOX_PACKAGES; do
         if ! su -c "pidof $pkg" >/dev/null; then
-            echo "Mở Roblox Cho $pkg..."
+            echo "Mở Roblox Cho $pkg"
             am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-            sleep 10
-            echo "Vào GameID $GAME_ID Cho $pkg..."
+            sleep 15
+            echo "Vào GameID $GAME_ID Cho $pkg"
             am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
             eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
         fi
@@ -89,13 +89,13 @@ auto_restart() {
         for pkg in $ROBLOX_PACKAGES; do
             eval "LAST_RESTART_TIME=\${LAST_RESTART_TIMES_$pkg:-0}"
             if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
-                echo "Đóng Roblox Cho $pkg..."
+                echo "Đóng Roblox Cho $pkg"
                 su -c "am force-stop $pkg" >/dev/null 2>&1
                 sleep 3
-                echo "Mở Roblox Cho $pkg..."
+                echo "Mở Roblox Cho $pkg"
                 am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-                sleep 10
-                echo "Vào GameID $GAME_ID Cho $pkg..."
+                sleep 15
+                echo "Vào GameID $GAME_ID Cho $pkg"
                 am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
                 eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
             fi
