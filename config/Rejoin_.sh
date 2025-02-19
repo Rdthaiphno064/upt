@@ -1,7 +1,7 @@
 #!/system/bin/sh
 echo "Loading..."
 if ! command -v sqlite3 >/dev/null 2>&1; then
-    pkg update && pkg upgrade -y && pkg install -y sqlite
+    pkg update && pkg upgrade -y && pkg install -y sqlite >/dev/null 2>&1
 fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
@@ -17,20 +17,16 @@ for pkg in $ROBLOX_PACKAGES; do
     echo "Đã Tạo Lịch Restart Cho $pkg"
 done
 force_restart() {
-    for pkg in $ROBLOX_PACKAGES; do
-        echo "Đóng Roblox Cho $pkg"
-        su -c "am force-stop $pkg" >/dev/null 2>&1
-    done
+    local pkg=$1
+    echo "Đóng Roblox Cho $pkg"
+    su -c "am force-stop $pkg" >/dev/null 2>&1
     sleep 3
-    for pkg in $ROBLOX_PACKAGES; do
-        echo "Mở Roblox Cho $pkg"
-        am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-        sleep 15
-        echo "Vào GameID $GAME_ID Cho $pkg"
-        am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-        LAST_RESTART_TIMES[$pkg]=$(date +%s)
-    done
-    sleep 10
+    echo "Mở Roblox Cho $pkg"
+    am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
+    sleep 15
+    echo "Vào GameID $GAME_ID Cho $pkg"
+    am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
+    LAST_RESTART_TIMES[$pkg]=$(date +%s)
 }
 auto_restart() {
     while true; do
@@ -38,13 +34,12 @@ auto_restart() {
         for pkg in $ROBLOX_PACKAGES; do
             LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
             if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
-                force_restart
+                force_restart $pkg
             fi
         done
         sleep 5
     done
 }
-force_restart
 auto_restart &
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
