@@ -30,13 +30,13 @@ force_restart() {
 }
 check_and_restart() {
     while true; do
+        sleep 60
         for pkg in $ROBLOX_PACKAGES; do
             if ! su -c "pidof $pkg" >/dev/null; then
                 echo "$pkg Không Hoạt Động, Restart"
                 force_restart "$pkg"
             fi
         done
-        sleep 15
     done
 }
 auto_restart() {
