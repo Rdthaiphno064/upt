@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/system/bin/sh
 get_user_info() {
     local username="$1"
     local response=$(curl -s -X POST "https://users.roblox.com/v1/usernames/users" \
