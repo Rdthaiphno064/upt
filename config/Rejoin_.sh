@@ -1,7 +1,7 @@
 #!/system/bin/sh
 echo "Loading..."
 if ! command -v sqlite3 >/dev/null 2>&1; then
-    pkg update && pkg install -y sqlite3
+    pkg update && pkg install -y sqlite
 fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
@@ -9,7 +9,7 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     GAME_ID="2753915549"
     TIME_REJOIN=$((60*60))
-    WEBHOOK_URL="https://Rejoin(tthinh.1412)"
+    WEBHOOK_URL="https://discord.com/api/webhooks/1341032374678585425/6Aqp7_1odK5-hu2o9y0uGYq9TlNnlXH2D1r6HZFgTWegZVN2Swvrm1QGTqADefmCRzU-"
     DEVICE_NAME=$(hostname)
     INTERVAL=5
 fi
@@ -17,7 +17,7 @@ ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
     LAST_RESTART_TIMES[$pkg]=0
-    echo "Đã tạo lịch sử restart cho $pkg"
+    echo "Đã Tạo Lịch Restart Cho $pkg"
 done
 send_webhook() {
     if ! echo "$WEBHOOK_URL" | grep -qE "^https://discord\.com/api/webhooks/"; then
