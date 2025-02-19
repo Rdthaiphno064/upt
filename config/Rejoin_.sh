@@ -1,7 +1,7 @@
 #!/system/bin/sh
 echo "Loading..."
 if ! command -v sqlite3 >/dev/null 2>&1; then
-    pkg update && pkg install -y sqlite
+    pkg update && pkg upgrade -y && pkg install -y sqlite
 fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
@@ -9,9 +9,6 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     GAME_ID="2753915549"
     TIME_REJOIN=$((60*60))
-    WEBHOOK_URL="https://discord.com/api/webhooks/1341032374678585425/6Aqp7_1odK5-hu2o9y0uGYq9TlNnlXH2D1r6HZFgTWegZVN2Swvrm1QGTqADefmCRzU-"
-    DEVICE_NAME=$(hostname)
-    INTERVAL=5
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 declare -A LAST_RESTART_TIMES
@@ -19,28 +16,6 @@ for pkg in $ROBLOX_PACKAGES; do
     LAST_RESTART_TIMES[$pkg]=0
     echo "Đã Tạo Lịch Restart Cho $pkg"
 done
-send_webhook() {
-    if ! echo "$WEBHOOK_URL" | grep -qE "^https://discord\.com/api/webhooks/"; then
-        return 1
-    fi
-    while true; do
-        CPU=$(top -bn1 | awk '/Cpu/ {print 100-$8}')
-        MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
-        MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
-        MEM_FREE=$(free -m | awk '/Mem:/ {print $7}')
-        UPTIME=$(awk '{print $1/3600}' /proc/uptime)
-        TEXT="\`\`\`
-Thiết bị: $DEVICE_NAME
-CPU: $CPU%
-RAM đã dùng: $(awk "BEGIN {print $MEM_USED/$MEM_TOTAL*100}")%
-RAM trống: $(awk "BEGIN {print $MEM_FREE/$MEM_TOTAL*100}")%
-Tổng RAM: $(awk "BEGIN {print $MEM_TOTAL/1024}") GB
-Uptime: $(awk "BEGIN {print $UPTIME}") Giờ
-\`\`\`"
-        curl -s -o /dev/null -H "Content-Type: application/json" -d "{\"content\": \"$TEXT\"}" "$WEBHOOK_URL"
-        sleep $((INTERVAL * 60))
-    done
-}
 force_restart() {
     for pkg in $ROBLOX_PACKAGES; do
         echo "Đóng Roblox Cho $pkg"
@@ -70,7 +45,6 @@ auto_restart() {
     done
 }
 force_restart
-send_webhook &
 auto_restart &
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
