@@ -44,7 +44,7 @@ main() {
 }
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Usage: $0 <username>"
+    echo "Usage: $(basename "$0") <username>"
     exit 1
 fi
 
