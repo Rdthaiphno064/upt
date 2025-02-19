@@ -1,6 +1,8 @@
 #!/system/bin/sh
 echo "Loading..."
-if ! command -v sqlite3 >/dev/null 2>&1; then pkg install -y sqlite3; fi
+if ! command -v sqlite3 >/dev/null 2>&1; then
+    pkg update && pkg install -y sqlite3
+fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
@@ -12,46 +14,30 @@ else
     INTERVAL=5
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
+declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
-    eval "LAST_RESTART_TIMES_$pkg=0"
+    LAST_RESTART_TIMES[$pkg]=0
+    echo "Đã tạo lịch sử restart cho $pkg"
 done
 send_webhook() {
-    echo "$WEBHOOK_URL" | grep -qE "^https://discord\.com/api/webhooks/" || {
+    if ! echo "$WEBHOOK_URL" | grep -qE "^https://discord\.com/api/webhooks/"; then
         return 1
-    }
+    fi
     while true; do
-        SCREENSHOT="/tmp/screenshot.png"
-        screencap -p "$SCREENSHOT" 2>/dev/null || import -window root "$SCREENSHOT" 2>/dev/null
         CPU=$(top -bn1 | awk '/Cpu/ {print 100-$8}')
         MEM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
         MEM_USED=$(free -m | awk '/Mem:/ {print $3}')
         MEM_FREE=$(free -m | awk '/Mem:/ {print $7}')
         UPTIME=$(awk '{print $1/3600}' /proc/uptime)
-        PAYLOAD=$(jq -n \
-            --arg title "Thông tin hệ thống của $DEVICE_NAME" \
-            --arg device_name "$DEVICE_NAME" \
-            --arg cpu_usage "$CPU%" \
-            --arg memory_used "$(awk "BEGIN {print $MEM_USED/$MEM_TOTAL*100}")%" \
-            --arg memory_free "$(awk "BEGIN {print $MEM_FREE/$MEM_TOTAL*100}")%" \
-            --arg memory_total "$(awk "BEGIN {print $MEM_TOTAL/1024}") GB" \
-            --arg uptime "$(awk "BEGIN {print $UPTIME}") Giờ" \
-            '{
-                embeds: [{
-                    title: $title,
-                    color: 15258703,
-                    fields: [
-                        {name: "Tên thiết bị", value: $device_name, inline: true},
-                        {name: "CPU", value: $cpu_usage, inline: true},
-                        {name: "RAM đã dùng", value: $memory_used, inline: true},
-                        {name: "RAM trống", value: $memory_free, inline: true},
-                        {name: "Tổng RAM", value: $memory_total, inline: true},
-                        {name: "Uptime", value: $uptime, inline: true}
-                    ],
-                    image: {url: "attachment://screenshot.png"}
-                }],
-                username: $device_name
-            }')
-        curl -s -o /dev/null -F "payload_json=$PAYLOAD" -F "file=@$SCREENSHOT" "$WEBHOOK_URL"
+        TEXT="\`\`\`
+Thiết bị: $DEVICE_NAME
+CPU: $CPU%
+RAM đã dùng: $(awk "BEGIN {print $MEM_USED/$MEM_TOTAL*100}")%
+RAM trống: $(awk "BEGIN {print $MEM_FREE/$MEM_TOTAL*100}")%
+Tổng RAM: $(awk "BEGIN {print $MEM_TOTAL/1024}") GB
+Uptime: $(awk "BEGIN {print $UPTIME}") Giờ
+\`\`\`"
+        curl -s -o /dev/null -H "Content-Type: application/json" -d "{\"content\": \"$TEXT\"}" "$WEBHOOK_URL"
         sleep $((INTERVAL * 60))
     done
 }
@@ -67,40 +53,19 @@ force_restart() {
         sleep 15
         echo "Vào GameID $GAME_ID Cho $pkg"
         am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-        eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
+        LAST_RESTART_TIMES[$pkg]=$(date +%s)
     done
     sleep 10
-}
-is_foreground() {
-    for pkg in $ROBLOX_PACKAGES; do
-        if ! su -c "pidof $pkg" >/dev/null; then
-            echo "Mở Roblox Cho $pkg"
-            am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-            sleep 15
-            echo "Vào GameID $GAME_ID Cho $pkg"
-            am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-            eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
-        fi
-    done
 }
 auto_restart() {
     while true; do
         CURRENT_TIME=$(date +%s)
         for pkg in $ROBLOX_PACKAGES; do
-            eval "LAST_RESTART_TIME=\${LAST_RESTART_TIMES_$pkg:-0}"
+            LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
             if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
-                echo "Đóng Roblox Cho $pkg"
-                su -c "am force-stop $pkg" >/dev/null 2>&1
-                sleep 3
-                echo "Mở Roblox Cho $pkg"
-                am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-                sleep 15
-                echo "Vào GameID $GAME_ID Cho $pkg"
-                am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-                eval "LAST_RESTART_TIMES_$pkg=$(date +%s)"
+                force_restart
             fi
         done
-        is_foreground
         sleep 5
     done
 }
