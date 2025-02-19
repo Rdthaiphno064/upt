@@ -28,6 +28,17 @@ force_restart() {
     am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
     LAST_RESTART_TIMES[$pkg]=$(date +%s)
 }
+check_and_restart() {
+    while true; do
+        for pkg in $ROBLOX_PACKAGES; do
+            if ! su -c "pidof $pkg" >/dev/null; then
+                echo "$pkg Không Hoạt Động, Restart"
+                force_restart "$pkg"
+            fi
+        done
+        sleep 15
+    done
+}
 auto_restart() {
     while true; do
         CURRENT_TIME=$(date +%s)
@@ -41,6 +52,7 @@ auto_restart() {
     done
 }
 auto_restart &
+check_and_restart &
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
 for PACKAGE in $ROBLOX_PACKAGES; do
