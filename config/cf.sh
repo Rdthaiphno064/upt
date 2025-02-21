@@ -6,12 +6,19 @@ check_user_status() {
         -H "Content-Type: application/json" \
         -d "{\"usernames\": [\"$username\"], \"excludeBannedUsers\": true}" | jq -r '.data[0].id // empty')
     
-    if [[ -n "$user_id" ]]; then
-        curl -s -X POST "https://presence.roblox.com/v1/presence/users" \
-            -H "Content-Type: application/json" \
-            -d "{\"userIds\": [$user_id]}" | jq -r '.userPresences[0].userPresenceType // -1'
-    else
+    if [[ -z "$user_id" || "$user_id" == "null" ]]; then
         echo "-1"
+        return
+    fi
+
+    local response=$(curl -s -X POST "https://presence.roblox.com/v1/presence/users" \
+        -H "Content-Type: application/json" \
+        -d "{\"userIds\": [$user_id]}" | jq -r '.userPresences[0].userPresenceType')
+    
+    if [[ -z "$response" || "$response" == "null" ]]; then
+        echo "-1"
+    else
+        echo "$response"
     fi
 }
 
