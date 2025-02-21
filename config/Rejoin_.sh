@@ -34,26 +34,12 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     GAME_ID="2753915549"
     TIME_REJOIN=45
-    WEBHOOKSEND="https://discord.com/api/webhooks/1342467058235080774/XVr1Xwc3TrbSDvfGuCQUOf_28_os4ySHS7xphbp3iIS_iMc0BxSU6QI-TkUzhQyw2cBW"
 fi
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
     LAST_RESTART_TIMES[$pkg]=0
     echo "Đã Tạo Lịch Restart Cho $pkg"
 done
-monitor() {
-    [[ "$WEBHOOKSEND" =~ ^https://discord\.com/api/webhooks/ ]] || return
-    while true; do
-        screencap -p /sdcard/screen.png
-        CPU=$(top -n 1 | awk '/%cpu/{print $2}')
-        USED_MEM=$(free -m | awk '/Mem:/ {print $3}')
-        TOTAL_MEM=$(free -m | awk '/Mem:/ {print $2}')
-        curl -F "file=@/sdcard/screen.png" \
-             -F "content=CPU: $CPU%\nRAM: $USED_MEM/$TOTAL_MEM MB" \
-             "$WEBHOOKSEND"
-        sleep 60
-    done
-}
 force_restart() {
     local pkg=$1
     echo "Đóng Roblox Cho $pkg"
