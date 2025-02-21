@@ -8,7 +8,7 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
     GAME_ID="2753915549"
-    TIME_REJOIN=60
+    TIME_REJOIN=45
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 declare -A LAST_RESTART_TIMES
@@ -51,8 +51,8 @@ auto_restart() {
         sleep 5
     done
 }
-auto_restart &
-check_and_restart &
+auto_restart
+check_and_restart
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 sleep 30
 for PACKAGE in $ROBLOX_PACKAGES; do
