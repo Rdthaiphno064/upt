@@ -12,4 +12,4 @@ check_user_status() {
         echo "-1"
     fi
 }
-check_user_status "Rdthaiphno064"
+check_user_status "$1"
