@@ -1,14 +1,14 @@
 #!/system/bin/sh
 echo "Loading..."
 if ! command -v sqlite3 >/dev/null 2>&1; then
-    pkg update && pkg upgrade -y && pkg install -y sqlite >/dev/null 2>&1
+    pkg update && pkg upgrade -y && pkg install -y sqlite && pkg install jq >/dev/null 2>&1
 fi
 CONFIG_FILE="$HOME/Downloads/ConfigRejoin.txt"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
     GAME_ID="2753915549"
-    TIME_REJOIN=$((60*60))
+    TIME_REJOIN=30
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 declare -A LAST_RESTART_TIMES
@@ -44,7 +44,7 @@ auto_restart() {
         CURRENT_TIME=$(date +%s)
         for pkg in $ROBLOX_PACKAGES; do
             LAST_RESTART_TIME=${LAST_RESTART_TIMES[$pkg]:-0}
-            if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $TIME_REJOIN ]; then
+            if [ $((CURRENT_TIME - LAST_RESTART_TIME)) -ge $((TIME_REJOIN*60)) ]; then
                 force_restart $pkg
             fi
         done
