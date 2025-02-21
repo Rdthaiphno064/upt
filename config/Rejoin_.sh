@@ -8,7 +8,7 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
     GAME_ID="2753915549"
-    TIME_REJOIN=30
+    TIME_REJOIN=60
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 declare -A LAST_RESTART_TIMES
