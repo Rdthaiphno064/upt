@@ -77,4 +77,3 @@ auto_restart() {
 }
 auto_restart
 check_and_restart
-monitor
