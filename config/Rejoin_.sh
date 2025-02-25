@@ -47,7 +47,7 @@ force_restart() {
     sleep 3
     echo "Mở Roblox Cho $pkg"
     am start -n ${pkg}/com.roblox.client.startup.ActivitySplash -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
-    sleep 15
+    sleep 10
     echo "Vào GameID $GAME_ID Cho $pkg"
     am start -n ${pkg}/com.roblox.client.ActivityProtocolLaunch -d "roblox://placeID=${GAME_ID}" >/dev/null 2>&1
     LAST_RESTART_TIMES[$pkg]=$(date +%s)
@@ -56,7 +56,7 @@ check_and_restart() {
     while true; do
         sleep 60
         for pkg in $ROBLOX_PACKAGES; do
-            if ! su -c "ps | grep -w $pkg | grep -v grep" >/dev/null; then
+            if ! su -c "ps -A | awk '\$NF==\"'$pkg'\"'" >/dev/null; then
                 echo "$pkg Không Hoạt Động, Restart"
                 force_restart "$pkg"
             fi
