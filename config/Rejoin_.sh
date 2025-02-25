@@ -33,7 +33,7 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
     GAME_ID="2753915549"
-    TIME_REJOIN=45
+    TIME_REJOIN=60
 fi
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
@@ -56,7 +56,7 @@ check_and_restart() {
     while true; do
         sleep 60
         for pkg in $ROBLOX_PACKAGES; do
-            if ! su -c "pidof $pkg" >/dev/null; then
+            if ! su -c "ps | grep -w $pkg | grep -v grep" >/dev/null; then
                 echo "$pkg Không Hoạt Động, Restart"
                 force_restart "$pkg"
             fi
@@ -72,7 +72,6 @@ auto_restart() {
                 force_restart $pkg
             fi
         done
-        sleep 5
     done
 }
 auto_restart
