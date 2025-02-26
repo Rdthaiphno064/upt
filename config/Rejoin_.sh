@@ -56,7 +56,7 @@ check_and_restart() {
     while true; do
         sleep 60
         for pkg in $ROBLOX_PACKAGES; do
-            if ! ps -A | grep -q "$pkg"; then
+            if ! su -c "ps -A | awk '\$NF==\"'$pkg'\"'" >/dev/null; then
                 echo "$pkg Không Hoạt Động, Restart"
                 force_restart "$pkg"
             fi
@@ -75,5 +75,4 @@ auto_restart() {
     done
 }
 auto_restart
-sleep 300
 check_and_restart
