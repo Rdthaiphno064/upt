@@ -33,7 +33,7 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 else
     GAME_ID="2753915549"
-    TIME_REJOIN=60
+    TIME_REJOIN=30
 fi
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
