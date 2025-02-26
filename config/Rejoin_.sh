@@ -34,6 +34,10 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     GAME_ID="2753915549"
     TIME_REJOIN=60
+    RobloxTab=1
+fi
+if [ "$RobloxTab" -gt 0 ]; then
+    ROBLOX_PACKAGES=$(echo "$ROBLOX_PACKAGES" | head -n "$RobloxTab")
 fi
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
