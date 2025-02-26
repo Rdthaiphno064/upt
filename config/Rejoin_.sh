@@ -74,5 +74,5 @@ auto_restart() {
         done
     done
 }
-auto_restart &
-check_and_restart &
+auto_restart
+check_and_restart
